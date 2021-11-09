@@ -1,7 +1,18 @@
-# Vue 3 + Vite
+# MTVD
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Author
+* Lawtedwu
+## Develop
 
-## Recommended IDE Setup
+```
+cd MTVD
+yarn or npm i
+yarn build (optional)
+yarn serve or npm run serve
+```
 
-- [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volar)
+## Source
+
+* Vue3 https://v3.vuejs.org/
+* naive Component Library https://www.naiveui.com/en-US/os-theme
+* Three.js https://threejs.org/docs
