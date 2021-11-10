@@ -5,9 +5,8 @@
     <n-space vertical>
       <n-card title="Wall Height" size="medium">
         <n-space vertical>
-          import { loadConfigFromFile } from 'vite'
           <n-slider v-model:value="wallHeight" :step="1" :min="10" :max="20" />
-          <n-input v-model:value="wallHeight" type="number" placeholder="基本的 Input" />
+          <n-input v-model:value="wallHeight" type="number" />
         </n-space>
       </n-card>
       <n-card title="orbitcontrol" size="medium">
@@ -45,53 +44,273 @@
       </n-card>
     </n-space>
   </div>
+  <div v-if="hasSelect" class="debug-board-right">
+    <n-space vertical>
+      <n-card title="Mode" size="medium">
+        <n-space vertical>
+          <n-select v-model:value="Mode" :options="Modeoptions" @update:value="changeMode" />
+          <n-button type="error" size="medium" @click="clearSelection">Clear Selection</n-button>
+        </n-space>
+      </n-card>
+      <n-card title="Translate" size="medium">
+        <n-space vertical>
+          <n-slider
+            v-model:value="INTERSECTED.position.x"
+            :step="1"
+            :min="-length * 50"
+            :max="length * 50"
+            @update:value="handletranslateX"
+          />
+          <n-slider
+            v-model:value="INTERSECTED.position.y"
+            :step="1"
+            :min="-length * 50"
+            :max="length * 50"
+            @update:value="handletranslatey"
+          />
+          <n-slider
+            v-model:value="INTERSECTED.position.z"
+            :step="1"
+            :min="-length * 50"
+            :max="length * 50"
+            @update:value="handletranslateZ"
+          />
+        </n-space>
+      </n-card>
+      <n-card title="Rotate" size="medium">
+        <n-space vertical>
+          <n-slider
+            v-model:value="INTERSECTED.rotation.x"
+            :step="Math.PI / 90"
+            :min="-Math.PI"
+            :max="Math.PI"
+            @update:value="handlerotateX"
+          />
+          <n-slider
+            v-model:value="INTERSECTED.rotation.y"
+            :step="Math.PI / 90"
+            :min="-Math.PI"
+            :max="Math.PI"
+            @update:value="handlerotatey"
+          />
+          <n-slider
+            v-model:value="INTERSECTED.rotation.z"
+            :step="Math.PI / 90"
+            :min="-Math.PI"
+            :max="Math.PI"
+            @update:value="handlerotateZ"
+          />
+        </n-space>
+      </n-card>
+      <n-card title="Scale" size="medium">
+        <n-space vertical>
+          <n-slider
+            v-model:value="INTERSECTED.scale.x"
+            :step="0.1"
+            :min="0"
+            :max="100"
+            @update:value="handlescaleX"
+          />
+          <n-slider
+            v-model:value="INTERSECTED.scale.y"
+            :step="0.1"
+            :min="0.1"
+            :max="100"
+            @update:value="handlescaley"
+          />
+          <n-slider
+            v-model:value="INTERSECTED.scale.z"
+            :step="0.1"
+            :min="0.1"
+            :max="100"
+            @update:value="handlescaleZ"
+          />
+          <n-button type="primary" size="medium" @click="scaleLarge">Larger</n-button>
+          <n-button type="primary" size="medium" @click="scaleSmall">Smaller</n-button>
+        </n-space>
+      </n-card>
+    </n-space>
+  </div>
 </template>
 <script setup>
 import * as THREE from 'Three'
 import { OrbitControls } from 'Three/examples/jsm/controls/OrbitControls'
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
+import * as dat from "dat.gui";
 import Stats from 'three/examples/jsm/libs/stats.module'
-import { NButton, NCard, NInput, NSlider, NSpace, NSwitch, NUpload, NUploadDragger, NIcon, NText, NP } from 'naive-ui'
+import { NButton, NCard, NInput, NSlider, NSpace, NSwitch, NUpload, NUploadDragger, NIcon, NText, NP, NCheckboxGroup, NCheckbox, NSelect } from 'naive-ui'
 import { ArchiveOutline as ArchiveIcon } from '@vicons/ionicons5'
 import { ref } from 'vue'
 let scene, camera, renderer, controls;
+let transformcontrols
+let INTERSECTED = ref(null)
+let objs = []
+let tmparray = [1]
+// 是否选中了物体
+// 编辑物体属性
+const Mode = ref('tranlate')
+const Modeoptions = [
+  {
+    label: 'translate',
+    value: 'translate'
+  },
+  {
+    label: 'rotate',
+    value: 'rotate'
+  },
+  {
+    label: 'scale',
+    value: 'scale'
+  }
+]
+const changeMode = (mode) => {
+  transformcontrols.setMode(mode)
+}
+const hasSelect = ref(false)
+const handletranslateX = (value) => {
+  INTERSECTED.value.position.x = value
+}
+const handletranslateY = (value) => {
+  INTERSECTED.value.position.y = value
+}
+const handletranslateZ = (value) => {
+  INTERSECTED.value.position.z = value
+}
+
+const handlerotateX = (value) => {
+  INTERSECTED.value.rotation.x = value
+}
+const handlerotateY = (value) => {
+  INTERSECTED.value.rotation.y = value
+}
+const handlerotateZ = (value) => {
+  INTERSECTED.value.rotation.z = value
+}
+
+const handlescaleX = (value) => {
+  INTERSECTED.value.scale.x = value
+}
+const handlescaleY = (value) => {
+  INTERSECTED.value.scale.y = value
+}
+const handlescaleZ = (value) => {
+  INTERSECTED.value.scale.z = value
+}
+
+const scaleLarge = (e) => {
+  INTERSECTED.value.scale.x += 2
+  INTERSECTED.value.scale.y += 2
+  INTERSECTED.value.scale.z += 2
+}
+
+const scaleSmall = (e) => {
+  INTERSECTED.value.scale.x -= 1
+  INTERSECTED.value.scale.y -= 1
+  INTERSECTED.value.scale.z -= 1
+}
+
 const debugChoose = ref(1)
 const wallHeight = ref(15)
-
 // 上传文件
-const loader = new GLTFLoader();
+const gltfloader = new GLTFLoader();
+const objloader = new OBJLoader()
 const uploadFile = ref(null)
 const beforeUpload = ({ file, fileList }) => {
-  console.log(file.file)
   file.status = 'finished'
   loadFile(file.file)
 }
 
 const loadFile = (file) => {
-  let reader = new FileReader();
-  reader.readAsArrayBuffer(file);
-  reader.onload = gltfText => {
-    loader.parse(gltfText.target.result, '', (gltfData) => {
-      scene.add(gltfData.scene)
-    },
-      errMassage => { console.error(errMassage) })
+  if (file.name.includes('.glb') || file.name.includes('.gltf')) {
+    let reader = new FileReader();
+    reader.readAsArrayBuffer(file);
+    reader.onload = gltfText => {
+      gltfloader.parse(gltfText.target.result, '', (gltfData) => {
+        scene.add(gltfData.scene)
+      },
+        errMassage => { console.error(errMassage) })
+    }
+  } else if (file.name.includes('.obj')) {
+    let reader = new FileReader();
+    reader.readAsArrayBuffer(file);
+    reader.onload = objText => {
+      objloader.parse(objText.target.result, '', (objData) => {
+        scene.add(objData.scene)
+      },
+        errMassage => { console.error(errMassage) })
+    }
   }
+
 }
 
 // 模板文件
-const loadTemplate(source) {
+const loadTemplate = (source) => {
   // loader.load('/models/Duck/glTF-Binary/Duck.glb', gltf => {
   //   console.log(gltf)
   //   const duck = gltf.scene.children[0]
   //   scene.add(duck)
   // })
-  loader.load(source, gltf => {
+  gltfloader.load(source, gltf => {
     const mesh = gltf.scene.children[0]
     scene.add(mesh)
   })
 }
 
-const
+
+// let precolor
+// 选择物体
+const selectObj = (event) => {
+  // console.log(INTERSECTED)
+  let intersects = getIntersects(event);
+  if (intersects.length && intersects[0].object.type == 'Mesh' && intersects[0].object.name !== ''
+    && intersects[0].object.name !== 'X'
+    && intersects[0].object.name !== 'Y'
+    && intersects[0].object.name !== 'Z') {
+    if (INTERSECTED.value !== intersects[0].object) {
+      INTERSECTED.value = intersects[0].object
+      const params = {};
+      params.scaleAll = 1
+      hasSelect.value = true
+      if (INTERSECTED.value.material.emissive) {
+        INTERSECTED.value.material.emissive.setHex(0x001aff);
+      }
+      transformcontrols.attach(INTERSECTED.value)
+
+      scene.add(transformcontrols)
+    }
+    window.removeEventListener('mousedown', selectObj, false);
+  }
+}
+
+const clearSelection = () => {
+  INTERSECTED.value.material.emissive.setHex(0x00000);
+  INTERSECTED.value = null
+  scene.remove(transformcontrols)
+  window.addEventListener('mousedown', selectObj, false);
+}
+
+// const addGUI = (obj,params) => {
+//   const gui = new dat.GUI();
+//   console.log(obj)
+//   gui.add(obj.position, "x").min(-5).max(100).step(1).name("Position X");
+//   gui.add(obj.position, "y").min(-5).max(100).step(1).name("Position Y");
+//   gui.add(obj.position, "z").min(-5).max(100).step(1).name("Position Z");
+//   gui.add(obj.rotation, "x").min(-Math.PI).max(Math.PI).step(Math.PI/90).name("Rotation X");
+//   gui.add(obj.rotation, "y").min(-Math.PI).max(Math.PI).step(Math.PI/90).name("Rotation Y");
+//   gui.add(obj.rotation, "z").min(-Math.PI).max(Math.PI).step(Math.PI/90).name("Rotation Z");
+//   gui.add(obj.scale, "x").min(0).max(100).step(0.1).name("Scale X");
+//   gui.add(obj.scale, "y").min(0).max(100).step(0.1).name("Scale Y");
+//   gui.add(obj.scale, "z").min(0).max(100).step(0.1).name("Scale Z");
+//   gui.add(params, "scaleAll").min(0).max(100).step(0.1).name("Scale All").onChange(rebuildObj(obj,params))
+// }
+
+// const rebuildObj = (obj, params) => {
+//   console.log(params)
+//   obj.scale.set(params.scaleAll, params.scaleAll, params.scaleAll)
+// }
+
 
 // 切换面板
 const handleDebugChoose = (value) => {
@@ -100,8 +319,10 @@ const handleDebugChoose = (value) => {
     orbitSwitch.value = true
     handleControl(true)
     scene.remove(groupPoints)
-    window.removeEventListener('mousedown', onMouseDown, false);/* 使用mousedown的时候可以判断出点击的鼠标左右键之分 */
-    window.removeEventListener('mousemove', onMouseMove, false);
+    window.removeEventListener('mousedown', onMouseDown, false);
+    // window.removeEventListener('mousemove', onMouseMove, false);
+    window.addEventListener('mousedown', selectObj, false);
+
   }
 }
 
@@ -121,19 +342,19 @@ const handleControl = (value) => {
 }
 
 // 性能插件
-const initStats = () => {
+// const initStats = () => {
 
-  let stats = new Stats();
+//   let stats = new Stats();
 
-  stats.setMode(0);
-  stats.domElement.style.position = 'absolute';
-  stats.domElement.style.left = '0px';
-  stats.domElement.style.right = '0px';
-  document.body.appendChild(stats.dom)
-  return stats;
+//   stats.setMode(0);
+//   stats.domElement.style.position = 'absolute';
+//   stats.domElement.style.left = '0px';
+//   stats.domElement.style.bottom = '0px';
+//   document.body.appendChild(stats.dom)
+//   return stats;
 
-}
-let stats = initStats();
+// }
+// let stats = initStats();
 
 // 地面网格所需变量
 let length = 200; // 地面尺寸
@@ -156,7 +377,6 @@ const initCamera = () => {
 
 // 渲染器
 const initRender = () => {
-
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
@@ -180,6 +400,15 @@ const initControls = () => {
   controls = new OrbitControls(camera, renderer.domElement);
   // controls.minAzimuthAngle = Math.PI;
   // controls.maxAzimuthAngle = Math.PI;
+  transformcontrols = new TransformControls(camera, renderer.domElement)
+  transformcontrols.addEventListener('mouseDown', function () {
+    orbitSwitch.value = false
+    handleControl(false)
+  });
+  transformcontrols.addEventListener('mouseUp', function () {
+    orbitSwitch.value = true
+    handleControl(true)
+  });
   controls.enableDamping = true
   controls.saveState()
   controls.enabled = false
@@ -370,46 +599,46 @@ const onMouseDown = (event) => {
 
 }
 
-const onMouseMove = (event) => {
+// const onMouseMove = (event) => {
 
-  var intersects = getIntersects(event);
+//   var intersects = getIntersects(event);
 
-  /* 判断交点是否在 x(-100, 100) ，z(-100, 100)(平面)之间 */
-  if (Math.abs(intersects.x) < length / 2 && Math.abs(intersects.z) < length / 2) {
+//   /* 判断交点是否在 x(-100, 100) ，z(-100, 100)(平面)之间 */
+//   if (Math.abs(intersects.x) < length / 2 && Math.abs(intersects.z) < length / 2) {
 
-    /* 鼠标左键未点击时线段的移动状态 */
-    if (scene.getObjectByName('line_move')) {
+//     /* 鼠标左键未点击时线段的移动状态 */
+//     if (scene.getObjectByName('line_move')) {
 
-      scene.remove(scene.getObjectByName('line_move'));
+//       scene.remove(scene.getObjectByName('line_move'));
 
-    }
-    /* 创建线段 */
-    var lineGeometry = new THREE.Geometry();
-    var lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+//     }
+//     /* 创建线段 */
+//     var lineGeometry = new THREE.Geometry();
+//     var lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
 
-    if (pointsArray.length > 0) {
+//     if (pointsArray.length > 0) {
 
-      lineGeometry.vertices.push(pointsArray[0].geometry.vertices[0]);
+//       lineGeometry.vertices.push(pointsArray[0].geometry.vertices[0]);
 
-      var mouseVector3 = new THREE.Vector3(intersects.x, 0, intersects.z);
+//       var mouseVector3 = new THREE.Vector3(intersects.x, 0, intersects.z);
 
-      lineGeometry.vertices.push(mouseVector3);
+//       lineGeometry.vertices.push(mouseVector3);
 
-      var line = new THREE.Line(lineGeometry, lineMaterial);
-      line.name = 'line_move';
+//       var line = new THREE.Line(lineGeometry, lineMaterial);
+//       line.name = 'line_move';
 
-      scene.add(line);
+//       scene.add(line);
 
-    }
+//     }
 
-  }
+//   }
 
-}
+// }
 
 
 /* 更新数据 */
 const update = () => {
-  stats.update();
+  // stats.update();
   controls.update();
 }
 
@@ -445,7 +674,7 @@ const init = () => {
 
   /* 事件监听 */
   window.addEventListener('resize', onWindowResize, false);
-  window.addEventListener('mousemove', onMouseMove, false);
+  // window.addEventListener('mousemove', onMouseMove, false);
   window.addEventListener('mousedown', onMouseDown, false);/* 使用mousedown的时候可以判断出点击的鼠标左右键之分 */
   // window.addEventListener('keydown', onKeyDown, false);/* 使用事件的时候要把前面的on给去掉 */
 
@@ -484,6 +713,32 @@ animate()
   right: 40px;
   border-radius: 10px;
   overflow: hidden;
-  transition: all 1.5s;
+  transition: all 0.8s;
+}
+.debug-board-right {
+  color: #000000;
+  border: 1px solid white;
+  width: 20px;
+  height: 800px;
+  margin-top: 40px;
+  position: absolute;
+  left: 40px;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.8s;
+}
+.debug-board-right:hover {
+  border: none;
+  width: 400px;
+  height: 800px;
+  margin-top: 40px;
+  position: absolute;
+  border-radius: none;
+  right: 40px;
+}
+#gui {
+  position: absolute;
+  top: 20px;
+  left: 20px;
 }
 </style>
