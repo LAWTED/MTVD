@@ -8,10 +8,13 @@
   },
   "dependencies": {
     "three": "^0.134.0",
-    "vue": "^3.2.16"
+    "vue": "^3.2.16",
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
+    "@vicons/ionicons5": "^0.11.0",
     "@vitejs/plugin-vue": "^1.9.3",
+    "naive-ui": "^2.20.1",
     "vite": "^2.6.4"
   }
 }
