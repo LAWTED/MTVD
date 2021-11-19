@@ -17,5 +17,6 @@
     "@vitejs/plugin-vue": "^1.9.3",
     "naive-ui": "^2.20.1",
     "vite": "^2.6.4"
-  }
+  },
+  "license": "MIT"
 }
